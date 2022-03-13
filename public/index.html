@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<head>
+    <title>chat app</title>
+    <!-- CSS only -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-uWxY/CJNBR+1zjPWmfnSnVxwRheevXITnMqoEIeG1LJrdI0GlVs/9cVSyPYXdcSF" crossorigin="anonymous">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div style="border: 2px solid red; height: 100vh;">
+        <div class="d-flex flex-column" >
+
+            <h1>ChatApp</h1>
+            <div id="messages" class="flex-1" style="    height: 430px; overflow-y: scroll;"></div>
+            <div class="dark-bg" style="    position: absolute;
+            bottom: 0;
+            width: 100%;">
+                
+                <div >
+                    <form id="message-form">
+                        <div class="input-group mb-3 input-group-sm">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon1">Msg</span>
+                            </div>
+                            <input type="text" class="form-control" placeholder="Message" id="message" aria-label="Message" aria-describedby="basic-addon1">
+                        </div>
+                        <button class="btn btn-success btn-sm mb-3 ">send</button>
+                    </form>
+                    <button id="send-location" class="btn btn-primary mb-3">Send location</button>
+                </div>
+            </div>
+
+    
+    <script id="message-template" type="text/html">
+        <div>
+            <p>{{CreatedAt}}:-<b>{{message}}</b></p>
+        </div>
+    </script>
+
+
+    <script id="location-message-template" type="text/html">
+        <div>
+            <p>{{CreatedAt}}:-<b><a href="{{data}}" target="_blank">My Current location</a></b></p>
+        </div>
+    </script>
+    </div>
+</div>
+    
+<script src="/socket.io/socket.io.js"></script>
+<script src="./js/chat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mustache@2.3.0/mustache.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qs/6.10.1/qs.min.js"></script>
+</body>
+</html>
