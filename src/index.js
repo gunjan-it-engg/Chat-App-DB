@@ -1,126 +1,124 @@
 const jwt = require("jsonwebtoken");
 const express = require("express");
-const auth = require("./middleware/auth")
+const auth = require("./middleware/auth");
 const http = require("http");
 const UserRouter = require("./routes/user");
 const cors = require("cors");
 const socketIo = require("socket.io");
-
 
 const port = process.env.PORT || 4000;
 const index = require("./routes/chat");
 const sockets = require("./routes/socket");
 
 const app = express();
-app.use(express.json())
+app.use(express.json());
 const server = http.createServer(app);
 
-require("./db/mongoose")
+require("./db/mongoose");
 app.use(index);
-app.use(UserRouter)
-app.use(sockets)
+app.use(UserRouter);
+app.use(sockets);
 app.use(
-    cors({
-      allowedHeaders: ["sessionId", "Content-Type"],
-      exposedHeaders: ["sessionId"],
-      origin: "*",
-      optionsSuccessStatus: 200,
-      methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-      preflightContinue: false,
-    })
-  );
-
+  cors({
+    allowedHeaders: ["sessionId", "Content-Type"],
+    exposedHeaders: ["sessionId"],
+    origin: "*",
+    optionsSuccessStatus: 200,
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    preflightContinue: false,
+  })
+);
 
 const io = socketIo(server);
-app.set('socketio', io);
+app.set("socketio", io);
 
 let interval;
 let userslist = [];
 let userdata = [];
-let count= 0;
+let count = 0;
 
-// socket authentication 
+// socket authentication
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
-  console.log("cheching handshake token",token)
-  if (isValidJwt(token)){
+  console.log("checking handshake token", token);
+  if (isValidJwt(token)) {
     next();
-}else{
+    console.log("going for the next");
+  } else {
+    // socket.disconnect();
     next(new Error("Socket authentication error"));
-}
-})
+  }
+});
 
-async function isValidJwt(token){
-  jwt.verify(token, "userislogin", function(err, decoded) {
-    console.log("decoded code",decoded)  
-    if (err){
-          console.log(err);
-          return false;
-      }else{
-          //console.log(decoded);
-          return true;
-      }
+async function isValidJwt(token) {
+  jwt.verify(token, "userislogin", function (err, decoded) {
+    console.log("decoded code", decoded);
+    if (err) {
+      console.log(err);
+      return false;
+    } else {
+      //console.log(decoded);
+      return true;
+    }
   });
 }
 
 // app.post("/connection",auth, async(req,res)=>{
 io.on("connection", (socket) => {
   // try{
-    // console.log(req.user.name , socket.id)
-    // console.log(userslist.includes(req.user.name && socket.id === false ? "ddd" : "ss"))
-    count++
-      if(userslist.includes(socket.id) === false){
-        userdata.push({"id":socket.id})
-        // userdata.push({"name":req.user.name,"id":socket.id})
-      }
-    userslist.push(...userdata)
-    // console.log(userslist)
-    io.emit("recive",userslist)
-    // socket.emit('onlinelist', userslist =>{
-    // })
-    let connectedUsersCount = io.engine.clientsCount
-    // let connectedUsersCount = userslist.length()
-    console.log("count",connectedUsersCount)
+  // console.log(req.user.name , socket.id)
+  // console.log(userslist.includes(req.user.name && socket.id === false ? "ddd" : "ss"))
+  count++;
+  if (userslist.includes(socket.id) === false) {
+    userdata.push({ id: socket.id });
+    // userdata.push({"name":req.user.name,"id":socket.id})
+  }
+  userslist.push(...userdata);
+  // console.log(userslist)
+  io.emit("recive", userslist);
+  // socket.emit('onlinelist', userslist =>{
+  // })
+  let connectedUsersCount = io.engine.clientsCount;
+  // let connectedUsersCount = userslist.length()
+  console.log("count", connectedUsersCount);
 
-    let oneUserLeft = connectedUsersCount - 1;
-    // let oneUSerLefts = userslist.pop(req.user.name , socket.id)
-    let oneUSerLefts = userslist.pop( socket.id)
-    io.emit('connectedUsersCount', connectedUsersCount);
+  let oneUserLeft = connectedUsersCount - 1;
+  // let oneUSerLefts = userslist.pop(req.user.name , socket.id)
+  let oneUSerLefts = userslist.pop(socket.id);
+  io.emit("connectedUsersCount", connectedUsersCount);
 
-    console.log("New client connected");
-    if (interval) {
-      clearInterval(interval);
-    }
-    interval = setInterval(() => getApiAndEmit(socket), 1000);
+  console.log("New client connected");
+  if (interval) {
+    clearInterval(interval);
+  }
+  interval = setInterval(() => getApiAndEmit(socket), 1000);
 
-    socket.on("disconnect", () => {
-      count--;
-      oneUserLeft,
-      oneUSerLefts,
-      console.log("Client disconnected");
-      clearInterval(interval);
-    });
-    // res.status(200).send("connection established")
+  socket.on("disconnect", () => {
+    count--;
+    oneUserLeft, oneUSerLefts, console.log("Client disconnected");
+    clearInterval(interval);
+  });
+  // res.status(200).send("connection established")
 
   // } catch (e){
   //   res.status(500).send({error:e.message})
   // }
-// })
-})
-app.post("/user/chating", auth , async (req,res)=>{
+  // })
+});
+app.post("/user/chating", auth, async (req, res) => {
   // var io = req.app.get('socket.io')
-  try{
-      console.log(req.body.data)
-      await io.to(req.body.data).emit("chating",`${req.user.name} waved with you`)
-      res.status(201).send("chatiing sucess")
-  } catch (e){
-      res.status(401).send({error:e.message})
+  try {
+    console.log(req.body.data);
+    await io
+      .to(req.body.data)
+      .emit("chating", `${req.user.name} waved with you`);
+    res.status(201).send("chatiing sucess");
+  } catch (e) {
+    res.status(401).send({ error: e.message });
   }
-})
+});
 
-
-
-const getApiAndEmit = socket => {
+const getApiAndEmit = (socket) => {
   const response = new Date();
   // Emitting a new message. Will be consumed by the client
   socket.emit("FromAPI", response);
@@ -159,8 +157,6 @@ server.listen(port, () => console.log(`Listening on port ${port}`));
 // const publicDirectoryPath = path.join(__dirname, "../public");
 
 // app.use(express.static(publicDirectoryPath));
-
-
 
 // const io = socketio(server,{
 //   cors:{
@@ -217,7 +213,7 @@ server.listen(port, () => console.log(`Listening on port ${port}`));
 // //     );
 // //     callback();
 // //   });
-//   // join a conversation 
+//   // join a conversation
 //   // const {roomId} = socket.handshake.query
 //   // socket.join(roomId)
 //   //  // Listen for new messages
@@ -228,7 +224,7 @@ server.listen(port, () => console.log(`Listening on port ${port}`));
 //   // socket.on('disconnect', () => {
 //   //   socket.leave(roomId);
 //   // });
-  
+
 // })
 
 // // app.get("/chat", auth, async(req,res)=>{
@@ -261,8 +257,8 @@ server.listen(port, () => console.log(`Listening on port ${port}`));
 // //           socket.join(userId);
 // //           //and then Later
 // //           io.to(userId).emit(message)
-      
-// //           //leave room 
+
+// //           //leave room
 // //           socket.on("leave",async function(socket){
 // //             const userId = await fetchUserId(socket)
 // //             socket.leave(userId)
@@ -298,7 +294,7 @@ server.listen(port, () => console.log(`Listening on port ${port}`));
 // //     //and then Later
 // //     io.to(userId).emit(message)
 
-// //     //leave room 
+// //     //leave room
 // //     socket.on("leave",async function(socket){
 // //       const userId = await fetchUserId(socket)
 // //       socket.leave(userId)
@@ -308,13 +304,10 @@ server.listen(port, () => console.log(`Listening on port ${port}`));
 // //   }
 // // });
 
-
 // app.use(express.json());
 
 // // user route
 // app.use(UserRouter);
-
-
 
 // app.post("/users/login", async (req, res) => {
 //     try {
@@ -344,7 +337,6 @@ server.listen(port, () => console.log(`Listening on port ${port}`));
 //       res.status(400).send({ error: e.message });
 //     }
 //   });
-
 
 // // app.get("/", function (req, res) {
 // //   res.send("Hello World!");
