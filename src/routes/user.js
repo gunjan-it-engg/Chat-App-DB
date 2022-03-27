@@ -26,9 +26,9 @@ user.post("/users", async (req, res) => {
 user.post("/users/login", async (req, res) => {
   try {
     const user = await User.findByCredentials(
-      name = req.body.data.name,
-      email = req.body.data.email,
-      passoword = req.body.data.password,
+      (name = req.body.data.name),
+      (email = req.body.data.email),
+      (passoword = req.body.data.password)
     );
     const token = await user.generateAuthToken();
     res.status(201).send({ user, token });

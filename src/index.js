@@ -35,6 +35,7 @@ app.set("socketio", io);
 let interval;
 let userslist = [];
 let userdata = [];
+let tokenRoom = [];
 let count = 0;
 
 // socket authentication
@@ -64,40 +65,71 @@ async function isValidJwt(token) {
 }
 
 // app.post("/connection",auth, async(req,res)=>{
+
 io.on("connection", (socket) => {
-  // try{
-  // console.log(req.user.name , socket.id)
-  // console.log(userslist.includes(req.user.name && socket.id === false ? "ddd" : "ss"))
-  count++;
-  if (userslist.includes(socket.id) === false) {
-    userdata.push({ id: socket.id });
-    // userdata.push({"name":req.user.name,"id":socket.id})
+  const token = socket.handshake.auth.token;
+
+  if (token) {
+    isCheckJwt(token);
+
+    async function isCheckJwt(token) {
+      jwt.verify(token, "userislogin", function (err, decoded) {
+        console.log("value code", decoded);
+        if (err) {
+          console.log(err);
+          return false;
+        } else {
+          //console.log(decoded);
+          if (userslist.map((x) => x.name === decoded.name)) {
+            userdata.push({ id: socket.id, name: decoded.name });
+            // userdata.push({"name":req.user.name,"id":socket.id})
+          }
+          userslist.push(...userdata);
+          // userdata.push();
+          return decoded;
+        }
+      });
+    }
+    // try{
+    // console.log(req.user.name , socket.id)
+    // console.log(userslist.includes(req.user.name && socket.id === false ? "ddd" : "ss"))
+    count++;
+    // if (!userslist.find(() => socket.id) && isCheckJwt(token)) {
+    //   userdata.push({ id: socket.id, name: decoded.name });
+    //   // userdata.push({"name":req.user.name,"id":socket.id})
+    // }
+    // userslist.push(...userdata);
+    console.log("userlist check", userslist);
+    // console.log(userslist)
+    socket.emit("recive", userslist);
+    // socket.emit('onlinelist', userslist =>{
+    // })
+    let connectedUsersCount = io.engine.clientsCount;
+    // let connectedUsersCount = userslist.length()
+    console.log("count", connectedUsersCount);
+
+    let oneUserLeft = connectedUsersCount - 1;
+    // let oneUSerLefts = userslist.pop(req.user.name , socket.id)
+    let oneUSerLefts = userslist.pop(socket.id);
+    io.to(socket.id).emit("connectedUsersCount", connectedUsersCount);
+
+    console.log("New client connected");
+    if (interval) {
+      clearInterval(interval);
+    }
+    interval = setInterval(() => getApiAndEmit(socket), 1000);
+
+    socket.on("disconnect", async () => {
+      let result = [];
+      await userslist.forEach(
+        (val) => val.id == socket.id && result.push(val.name)
+      );
+      io.emit("left", `${result} has left`);
+      count--;
+      oneUserLeft, oneUSerLefts, console.log("Client disconnected");
+      clearInterval(interval);
+    });
   }
-  userslist.push(...userdata);
-  // console.log(userslist)
-  io.emit("recive", userslist);
-  // socket.emit('onlinelist', userslist =>{
-  // })
-  let connectedUsersCount = io.engine.clientsCount;
-  // let connectedUsersCount = userslist.length()
-  console.log("count", connectedUsersCount);
-
-  let oneUserLeft = connectedUsersCount - 1;
-  // let oneUSerLefts = userslist.pop(req.user.name , socket.id)
-  let oneUSerLefts = userslist.pop(socket.id);
-  io.emit("connectedUsersCount", connectedUsersCount);
-
-  console.log("New client connected");
-  if (interval) {
-    clearInterval(interval);
-  }
-  interval = setInterval(() => getApiAndEmit(socket), 1000);
-
-  socket.on("disconnect", () => {
-    count--;
-    oneUserLeft, oneUSerLefts, console.log("Client disconnected");
-    clearInterval(interval);
-  });
   // res.status(200).send("connection established")
 
   // } catch (e){

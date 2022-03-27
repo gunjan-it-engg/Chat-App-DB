@@ -56,11 +56,11 @@ const userSchema = new mongoose.Schema(
       type: String,
     },
 
-    ip:{
+    ip: {
       type: String,
     },
 
-    isloggedin:{
+    isloggedin: {
       type: String,
       default: false,
     },
@@ -79,7 +79,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-
 userSchema.methods.generateAuthToken = async function () {
   const user = this;
   const token = jwt.sign(
@@ -91,7 +90,7 @@ userSchema.methods.generateAuthToken = async function () {
   return token;
 };
 
-userSchema.statics.findByCredentials = async (name , email, password) => {
+userSchema.statics.findByCredentials = async (name, email, password) => {
   const user = await User.findOne({ name });
   if (!user) {
     throw new Error("enable to login");
